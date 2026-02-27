@@ -186,8 +186,8 @@ npm run dev
 ### What the example covers
 | Page | Features exercised |
 |---|---|
-| `/` (Home) | Design events, auth simulator, consent banner |
-| `/dashboard` | Business events (subscription), resource events (credits) |
+| `/` (Home) | Design events, ad events (show, click, rewarded, failed), auth simulator, consent banner |
+| `/dashboard` | Business events (subscription), resource events (credits), error events (warning, error, critical) |
 | `/dashboard/analytics` | Design event on mount, 3-level page view hierarchy |
 | `/settings` | Custom dimension changes, global custom event fields |
 | `/onboarding` | Progression events across a multi-step flow (start, complete, fail) |
