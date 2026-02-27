@@ -5,6 +5,7 @@ import {
   mapErrorSeverity,
   mapAdAction,
   mapAdType,
+  mapAdError,
 } from '../core/events'
 
 describe('Enum mappings', () => {
@@ -80,6 +81,27 @@ describe('Enum mappings', () => {
     })
     it('maps banner to 6', () => {
       expect(mapAdType('banner')).toBe(6)
+    })
+  })
+
+  describe('mapAdError', () => {
+    it('maps unknown to 1', () => {
+      expect(mapAdError('unknown')).toBe(1)
+    })
+    it('maps offline to 2', () => {
+      expect(mapAdError('offline')).toBe(2)
+    })
+    it('maps noFill to 3', () => {
+      expect(mapAdError('noFill')).toBe(3)
+    })
+    it('maps internalError to 4', () => {
+      expect(mapAdError('internalError')).toBe(4)
+    })
+    it('maps invalidRequest to 5', () => {
+      expect(mapAdError('invalidRequest')).toBe(5)
+    })
+    it('maps unableToPrecache to 6', () => {
+      expect(mapAdError('unableToPrecache')).toBe(6)
     })
   })
 })

@@ -16,6 +16,7 @@ export type {
   ErrorSeverity,
   AdAction,
   AdType,
+  AdError,
   PageViewConfig,
   CustomDimensionsConfig,
   GAPlugin,
@@ -31,6 +32,7 @@ export {
   ERROR_SEVERITY_MAP,
   AD_ACTION_MAP,
   AD_TYPE_MAP,
+  AD_ERROR_MAP,
 } from './types'
 
 // Event helpers
@@ -40,6 +42,7 @@ export {
   mapErrorSeverity,
   mapAdAction,
   mapAdType,
+  mapAdError,
 } from './events'
 
 // Page tracking

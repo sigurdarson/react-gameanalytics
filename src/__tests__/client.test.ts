@@ -17,11 +17,8 @@ describe('GameAnalyticsClient', () => {
         secretKey: 'test-secret',
         debug: true,
         verbose: true,
-        autoCrashReporting: true,
-        autoErrorReporting: true,
         manualSessionHandling: true,
         eventProcessInterval: 5000,
-        gamepadEnabled: false,
         build: '1.0.0',
         userId: 'user-123',
         customDimensions: {
@@ -40,11 +37,8 @@ describe('GameAnalyticsClient', () => {
       const beforeInit = [
         'setEnabledInfoLog',
         'setEnabledVerboseLog',
-        'setEnabledAutoCrashReporting',
-        'setEnabledErrorReporting',
-        'setManualSessionHandling',
+        'setEnabledManualSessionHandling',
         'setEventProcessInterval',
-        'configureAvailableGamepadsEnabled',
         'configureBuild',
         'configureUserId',
         'configureAvailableCustomDimensions01',
@@ -59,6 +53,12 @@ describe('GameAnalyticsClient', () => {
         expect(idx).toBeGreaterThan(-1)
         expect(idx).toBeLessThan(initIdx)
       }
+    })
+
+    it('converts eventProcessInterval from ms to seconds', () => {
+      client.init({ gameKey: 'gk', secretKey: 'sk', eventProcessInterval: 5000 })
+      const call = mockGA.mock.calls.find((c) => c[0] === 'setEventProcessInterval')
+      expect(call).toEqual(['setEventProcessInterval', 5])
     })
 
     it('calls initialize with gameKey and secretKey', () => {
@@ -123,6 +123,20 @@ describe('GameAnalyticsClient', () => {
       expect(call![5]).toBe('pricing_page')
     })
 
+    it('addBusinessEvent passes customFields as object', () => {
+      const fields = { coupon: 'SAVE20' }
+      client.addBusinessEvent({
+        currency: 'USD',
+        amount: 100,
+        itemType: 'sub',
+        itemId: 'basic',
+        customFields: fields,
+      })
+
+      const call = mockGA.mock.calls.find((c) => c[0] === 'addBusinessEvent')
+      expect(call![6]).toEqual(fields)
+    })
+
     it('addResourceEvent maps flowType to numeric value', () => {
       client.addResourceEvent({
         flowType: 'source',
@@ -152,6 +166,21 @@ describe('GameAnalyticsClient', () => {
       expect(call![1]).toBe(2) // complete -> 2
       expect(call![2]).toBe('onboarding')
       expect(call![3]).toBe('profile')
+      expect(call![4]).toBe('') // progression03 defaults to ''
+      expect(call![5]).toBe(85) // score
+    })
+
+    it('addProgressionEvent passes customFields in correct position', () => {
+      const fields = { step: 'final' }
+      client.addProgressionEvent({
+        status: 'start',
+        progression01: 'checkout',
+        customFields: fields,
+      })
+
+      const call = mockGA.mock.calls.find((c) => c[0] === 'addProgressionEvent')
+      expect(call![5]).toBeUndefined() // score is undefined
+      expect(call![6]).toEqual(fields) // customFields in position 6
     })
 
     it('addDesignEvent passes eventId and value', () => {
@@ -164,6 +193,19 @@ describe('GameAnalyticsClient', () => {
       expect(call).toBeDefined()
       expect(call![1]).toBe('ui:sidebar:toggle')
       expect(call![2]).toBe(4)
+    })
+
+    it('addDesignEvent passes customFields as object without spurious value', () => {
+      const fields = { key: 'value' }
+      client.addDesignEvent({
+        eventId: 'test',
+        customFields: fields,
+      })
+
+      const call = mockGA.mock.calls.find((c) => c[0] === 'addDesignEvent')
+      expect(call).toBeDefined()
+      expect(call![2]).toBeUndefined() // value is undefined, not 0
+      expect(call![3]).toEqual(fields) // customFields as object, not JSON string
     })
 
     it('addErrorEvent maps severity to numeric value', () => {
@@ -194,17 +236,32 @@ describe('GameAnalyticsClient', () => {
       expect(call![4]).toBe('article_footer')
     })
 
-    it('passes customFields as JSON string', () => {
-      client.addDesignEvent({
-        eventId: 'test',
-        customFields: { key: 'value' },
+    it('addAdEvent uses addAdEventWithDuration when duration is set', () => {
+      client.addAdEvent({
+        adAction: 'show',
+        adType: 'rewardedVideo',
+        adSdkName: 'admob',
+        adPlacement: 'unlock_report',
+        duration: 30,
       })
 
-      const call = mockGA.mock.calls.find((c) => c[0] === 'addDesignEvent')
+      const call = mockGA.mock.calls.find((c) => c[0] === 'addAdEventWithDuration')
       expect(call).toBeDefined()
-      // args: [command, eventId, valuePlaceholder, customFieldsJson]
-      expect(call![2]).toBe(0)
-      expect(call![3]).toBe(JSON.stringify({ key: 'value' }))
+      expect(call![5]).toBe(30) // duration
+    })
+
+    it('addAdEvent uses addAdEventWithNoAdReason when noAdReason is set', () => {
+      client.addAdEvent({
+        adAction: 'failedShow',
+        adType: 'interstitial',
+        adSdkName: 'admob',
+        adPlacement: 'between_pages',
+        noAdReason: 'noFill',
+      })
+
+      const call = mockGA.mock.calls.find((c) => c[0] === 'addAdEventWithNoAdReason')
+      expect(call).toBeDefined()
+      expect(call![5]).toBe(3) // noFill -> 3
     })
 
     it('does not dispatch events before init', () => {
@@ -245,6 +302,37 @@ describe('GameAnalyticsClient', () => {
       const fields = { orgId: 'org_123' }
       client.setGlobalCustomEventFields(fields)
       expect(mockGA).toHaveBeenCalledWith('setGlobalCustomEventFields', fields)
+    })
+  })
+
+  describe('remote configs', () => {
+    beforeEach(() => {
+      client.init({ gameKey: 'gk', secretKey: 'sk' })
+      mockGA.mockClear()
+    })
+
+    it('onRemoteConfigsReady passes listener object with onRemoteConfigsUpdated', () => {
+      const callback = vi.fn()
+      client.onRemoteConfigsReady(callback)
+
+      const call = mockGA.mock.calls.find((c) => c[0] === 'addRemoteConfigsListener')
+      expect(call).toBeDefined()
+      expect(call![1]).toEqual({ onRemoteConfigsUpdated: callback })
+    })
+
+    it('onRemoteConfigsReady unsubscribe removes the same listener object', () => {
+      const callback = vi.fn()
+      const unsubscribe = client.onRemoteConfigsReady(callback)
+
+      const addCall = mockGA.mock.calls.find((c) => c[0] === 'addRemoteConfigsListener')
+      const listenerObj = addCall![1]
+
+      mockGA.mockClear()
+      unsubscribe()
+
+      const removeCall = mockGA.mock.calls.find((c) => c[0] === 'removeRemoteConfigsListener')
+      expect(removeCall).toBeDefined()
+      expect(removeCall![1]).toBe(listenerObj)
     })
   })
 

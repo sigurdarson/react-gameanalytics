@@ -15,6 +15,9 @@ export type AdAction = 'clicked' | 'show' | 'failedShow' | 'rewardReceived'
 /** Ad format type */
 export type AdType = 'video' | 'rewardedVideo' | 'playable' | 'interstitial' | 'offerWall' | 'banner'
 
+/** Ad error reason (for failed ad shows) */
+export type AdError = 'unknown' | 'offline' | 'noFill' | 'internalError' | 'invalidRequest' | 'unableToPrecache'
+
 // ---- Enum mapping objects (string -> SDK numeric) ----
 
 export const RESOURCE_FLOW_MAP: Record<ResourceFlowType, number> = {
@@ -50,6 +53,15 @@ export const AD_TYPE_MAP: Record<AdType, number> = {
   interstitial: 4,
   offerWall: 5,
   banner: 6,
+}
+
+export const AD_ERROR_MAP: Record<AdError, number> = {
+  unknown: 1,
+  offline: 2,
+  noFill: 3,
+  internalError: 4,
+  invalidRequest: 5,
+  unableToPrecache: 6,
 }
 
 // ---- Event parameter interfaces ----
@@ -132,8 +144,10 @@ export interface AdEventParams {
   adSdkName: string
   /** Placement identifier (e.g. 'article_footer') */
   adPlacement: string
-  /** Duration in seconds (for video ads) */
+  /** Duration in seconds (for video ads). Uses addAdEventWithDuration SDK method. */
   duration?: number
+  /** Reason an ad failed to show. Uses addAdEventWithNoAdReason SDK method. */
+  noAdReason?: AdError
   /** Additional custom data */
   customFields?: Record<string, any>
 }
@@ -175,18 +189,12 @@ export interface GameAnalyticsConfig {
   verbose?: boolean
   /** Track route changes as design events */
   trackPageViews?: boolean | PageViewConfig
-  /** Auto-report uncaught errors */
-  autoCrashReporting?: boolean
-  /** Auto-report JavaScript errors */
-  autoErrorReporting?: boolean
   /** Enable/disable event submission (for consent flows) */
   enabled?: boolean
   /** Enable manual session handling */
   manualSessionHandling?: boolean
-  /** Event dispatch interval in milliseconds */
+  /** Event dispatch interval in milliseconds (converted to seconds for SDK internally) */
   eventProcessInterval?: number
-  /** Enable gamepad support */
-  gamepadEnabled?: boolean
   /** Available custom dimension values */
   customDimensions?: CustomDimensionsConfig
   /** Available resource currency names */

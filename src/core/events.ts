@@ -4,11 +4,13 @@ import {
   ERROR_SEVERITY_MAP,
   AD_ACTION_MAP,
   AD_TYPE_MAP,
+  AD_ERROR_MAP,
   type ResourceFlowType,
   type ProgressionStatus,
   type ErrorSeverity,
   type AdAction,
   type AdType,
+  type AdError,
 } from './types'
 
 /** Map a resource flow type string to its SDK numeric value */
@@ -34,4 +36,9 @@ export function mapAdAction(adAction: AdAction): number {
 /** Map an ad type string to its SDK numeric value */
 export function mapAdType(adType: AdType): number {
   return AD_TYPE_MAP[adType]
+}
+
+/** Map an ad error reason string to its SDK numeric value */
+export function mapAdError(adError: AdError): number {
+  return AD_ERROR_MAP[adError]
 }

@@ -20,6 +20,7 @@ export type {
   ErrorSeverity,
   AdAction,
   AdType,
+  AdError,
   PageViewConfig,
   CustomDimensionsConfig,
   GAPlugin,

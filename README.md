@@ -139,8 +139,6 @@ The `GameAnalyticsProvider` accepts all configuration options as props:
 
   // Auto-tracking
   trackPageViews={false}          // Track route changes as design events
-  autoCrashReporting={false}      // Auto-report uncaught errors
-  autoErrorReporting={false}      // Auto-report JS errors
 
   // Consent
   enabled={true}                  // Set false to defer until consent given
@@ -162,8 +160,6 @@ The `GameAnalyticsProvider` accepts all configuration options as props:
   resourceCurrencies={['credits', 'tokens', 'api_calls']}
   resourceItemTypes={['feature_unlock', 'export', 'integration']}
 
-  // Other
-  gamepadEnabled={false}
 >
   {children}
 </GameAnalyticsProvider>
@@ -334,6 +330,15 @@ ga.addAdEvent({
   adSdkName: 'admob',
   adPlacement: 'unlock_report',
   duration: 30,
+})
+
+// Ad failed to show
+ga.addAdEvent({
+  adAction: 'failedShow',
+  adType: 'interstitial',
+  adSdkName: 'admob',
+  adPlacement: 'between_pages',
+  noAdReason: 'noFill',  // 'unknown' | 'offline' | 'noFill' | 'internalError' | 'invalidRequest' | 'unableToPrecache'
 })
 ```
 
@@ -901,6 +906,7 @@ import type {
   ErrorSeverity,
   AdAction,
   AdType,
+  AdError,
   GAPlugin,
   GAEvent,
   EventTypeMap,

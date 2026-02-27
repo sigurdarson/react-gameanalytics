@@ -16,6 +16,7 @@ import {
   mapErrorSeverity,
   mapAdAction,
   mapAdType,
+  mapAdError,
 } from './events'
 import { PluginManager } from './plugins'
 import { callSDK } from './sdk'
@@ -29,7 +30,7 @@ export class GameAnalyticsClient implements GameAnalyticsSDK {
   private _initialized = false
   private _config: GameAnalyticsConfig | null = null
   private _pluginManager = new PluginManager()
-  private _remoteConfigListeners = new Map<() => void, () => void>()
+  private _remoteConfigListeners = new Map<() => void, { onRemoteConfigsUpdated: () => void }>()
 
   private get isBrowser(): boolean {
     return typeof window !== 'undefined'
@@ -57,30 +58,17 @@ export class GameAnalyticsClient implements GameAnalyticsSDK {
       this.call('setEnabledVerboseLog', true)
     }
 
-    // 2. Error reporting
-    if (config.autoCrashReporting) {
-      this.call('setEnabledAutoCrashReporting', true)
-    }
-    if (config.autoErrorReporting) {
-      this.call('setEnabledErrorReporting', true)
-    }
-
-    // 3. Session handling
+    // 2. Session handling
     if (config.manualSessionHandling) {
-      this.call('setManualSessionHandling', true)
+      this.call('setEnabledManualSessionHandling', true)
     }
 
-    // 4. Event processing
+    // 3. Event processing (convert ms to seconds for SDK)
     if (config.eventProcessInterval !== undefined) {
-      this.call('setEventProcessInterval', config.eventProcessInterval)
+      this.call('setEventProcessInterval', config.eventProcessInterval / 1000)
     }
 
-    // 5. Gamepad
-    if (config.gamepadEnabled !== undefined) {
-      this.call('configureAvailableGamepadsEnabled', config.gamepadEnabled)
-    }
-
-    // 6. Build
+    // 4. Build
     if (config.build) {
       this.call('configureBuild', config.build)
     }
@@ -149,13 +137,15 @@ export class GameAnalyticsClient implements GameAnalyticsSDK {
     if (!this.isBrowser || !this._initialized) return
     const event: GAEvent = { type: 'business', params, timestamp: Date.now() }
     this.dispatchEvent(event, () => {
-      const args: any[] = [params.currency, params.amount, params.itemType, params.itemId]
-      if (params.cartType !== undefined) args.push(params.cartType)
-      else args.push('')
-      if (params.customFields) {
-        args.push(JSON.stringify(params.customFields))
-      }
-      this.call('addBusinessEvent', ...args)
+      this.call(
+        'addBusinessEvent',
+        params.currency,
+        params.amount,
+        params.itemType,
+        params.itemId,
+        params.cartType ?? '',
+        params.customFields,
+      )
     })
   }
 
@@ -164,17 +154,15 @@ export class GameAnalyticsClient implements GameAnalyticsSDK {
     if (!this.isBrowser || !this._initialized) return
     const event: GAEvent = { type: 'resource', params, timestamp: Date.now() }
     this.dispatchEvent(event, () => {
-      const args: any[] = [
+      this.call(
+        'addResourceEvent',
         mapResourceFlowType(params.flowType),
         params.currency,
         params.amount,
         params.itemType,
         params.itemId,
-      ]
-      if (params.customFields) {
-        args.push(JSON.stringify(params.customFields))
-      }
-      this.call('addResourceEvent', ...args)
+        params.customFields,
+      )
     })
   }
 
@@ -183,16 +171,15 @@ export class GameAnalyticsClient implements GameAnalyticsSDK {
     if (!this.isBrowser || !this._initialized) return
     const event: GAEvent = { type: 'progression', params, timestamp: Date.now() }
     this.dispatchEvent(event, () => {
-      const args: any[] = [mapProgressionStatus(params.status), params.progression01]
-      if (params.progression02 !== undefined) args.push(params.progression02)
-      else args.push('')
-      if (params.progression03 !== undefined) args.push(params.progression03)
-      else args.push('')
-      if (params.score !== undefined) args.push(params.score)
-      if (params.customFields) {
-        args.push(JSON.stringify(params.customFields))
-      }
-      this.call('addProgressionEvent', ...args)
+      this.call(
+        'addProgressionEvent',
+        mapProgressionStatus(params.status),
+        params.progression01,
+        params.progression02 ?? '',
+        params.progression03 ?? '',
+        params.score,
+        params.customFields,
+      )
     })
   }
 
@@ -201,13 +188,12 @@ export class GameAnalyticsClient implements GameAnalyticsSDK {
     if (!this.isBrowser || !this._initialized) return
     const event: GAEvent = { type: 'design', params, timestamp: Date.now() }
     this.dispatchEvent(event, () => {
-      const args: any[] = [params.eventId]
-      if (params.value !== undefined) args.push(params.value)
-      else if (params.customFields) args.push(0)
-      if (params.customFields) {
-        args.push(JSON.stringify(params.customFields))
-      }
-      this.call('addDesignEvent', ...args)
+      this.call(
+        'addDesignEvent',
+        params.eventId,
+        params.value,
+        params.customFields,
+      )
     })
   }
 
@@ -216,13 +202,12 @@ export class GameAnalyticsClient implements GameAnalyticsSDK {
     if (!this.isBrowser || !this._initialized) return
     const event: GAEvent = { type: 'error', params, timestamp: Date.now() }
     this.dispatchEvent(event, () => {
-      const args: any[] = [mapErrorSeverity(params.severity)]
-      if (params.message !== undefined) args.push(params.message)
-      else args.push('')
-      if (params.customFields) {
-        args.push(JSON.stringify(params.customFields))
-      }
-      this.call('addErrorEvent', ...args)
+      this.call(
+        'addErrorEvent',
+        mapErrorSeverity(params.severity),
+        params.message ?? '',
+        params.customFields,
+      )
     })
   }
 
@@ -231,18 +216,29 @@ export class GameAnalyticsClient implements GameAnalyticsSDK {
     if (!this.isBrowser || !this._initialized) return
     const event: GAEvent = { type: 'ad', params, timestamp: Date.now() }
     this.dispatchEvent(event, () => {
-      const args: any[] = [
-        mapAdAction(params.adAction),
-        mapAdType(params.adType),
-        params.adSdkName,
-        params.adPlacement,
-      ]
-      if (params.duration !== undefined) args.push(params.duration)
-      else if (params.customFields) args.push(0)
-      if (params.customFields) {
-        args.push(JSON.stringify(params.customFields))
+      const action = mapAdAction(params.adAction)
+      const type = mapAdType(params.adType)
+      if (params.noAdReason !== undefined) {
+        this.call(
+          'addAdEventWithNoAdReason',
+          action, type, params.adSdkName, params.adPlacement,
+          mapAdError(params.noAdReason),
+          params.customFields,
+        )
+      } else if (params.duration !== undefined) {
+        this.call(
+          'addAdEventWithDuration',
+          action, type, params.adSdkName, params.adPlacement,
+          params.duration,
+          params.customFields,
+        )
+      } else {
+        this.call(
+          'addAdEvent',
+          action, type, params.adSdkName, params.adPlacement,
+          params.customFields,
+        )
       }
-      this.call('addAdEvent', ...args)
     })
   }
 
@@ -315,12 +311,13 @@ export class GameAnalyticsClient implements GameAnalyticsSDK {
   /** Subscribe to remote config ready events. Returns an unsubscribe function. */
   onRemoteConfigsReady(callback: () => void): () => void {
     if (!this.isBrowser) return () => {}
-    this.call('addRemoteConfigsListener', callback)
-    const unsubscribe = () => {
-      this.call('removeRemoteConfigsListener', callback)
+    const listener = { onRemoteConfigsUpdated: callback }
+    this.call('addRemoteConfigsListener', listener)
+    this._remoteConfigListeners.set(callback, listener)
+    return () => {
+      this.call('removeRemoteConfigsListener', listener)
+      this._remoteConfigListeners.delete(callback)
     }
-    this._remoteConfigListeners.set(callback, unsubscribe)
-    return unsubscribe
   }
 
   /** Get the A/B testing ID */

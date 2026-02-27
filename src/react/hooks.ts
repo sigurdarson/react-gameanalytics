@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useGameAnalyticsContext } from './provider'
-import { pathnameToEventId } from '../core/page-tracking'
+import { pathnameToEventId, shouldTrackPath } from '../core/page-tracking'
 import type { GameAnalyticsSDK, PageViewConfig } from '../core/types'
 
 /**
@@ -54,7 +54,9 @@ export function useTrackPageView(
     if (pathname === prevPathRef.current) return
     prevPathRef.current = pathname
 
+    if (config?.excludePaths && !shouldTrackPath(pathname, config.excludePaths)) return
+
     const eventId = pathnameToEventId(pathname, config?.prefix)
     ga.addDesignEvent({ eventId })
-  }, [ga, pathname, config?.prefix])
+  }, [ga, pathname, config?.prefix, config?.excludePaths])
 }
