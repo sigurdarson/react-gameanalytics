@@ -1,6 +1,6 @@
 'use client'
 
-import { type ReactNode } from 'react'
+import { Suspense, type ReactNode } from 'react'
 import { GameAnalyticsProvider as ReactProvider } from '../react/provider'
 import type { GameAnalyticsConfig, PageViewConfig } from '../core/types'
 import { PageTracker } from './page-tracker'
@@ -29,7 +29,11 @@ export function GameAnalyticsProvider({
 
   return (
     <ReactProvider {...config}>
-      {pageViewConfig !== undefined && <PageTracker config={pageViewConfig} />}
+      {pageViewConfig !== undefined && (
+        <Suspense fallback={null}>
+          <PageTracker config={pageViewConfig} />
+        </Suspense>
+      )}
       {children}
     </ReactProvider>
   )

@@ -9,6 +9,7 @@ export default defineConfig([
     sourcemap: true,
     clean: true,
     external: ['react', 'next'],
+    noExternal: ['gameanalytics'],
   },
   {
     entry: { index: 'src/react/index.ts' },
@@ -18,6 +19,7 @@ export default defineConfig([
     sourcemap: true,
     clean: true,
     external: ['react', 'react-dom', 'next'],
+    noExternal: ['gameanalytics'],
     banner: { js: '"use client";' },
   },
   {
@@ -28,6 +30,7 @@ export default defineConfig([
     sourcemap: true,
     clean: true,
     external: ['react', 'react-dom', 'next', 'next/navigation', 'next/router'],
+    noExternal: ['gameanalytics'],
     banner: { js: '"use client";' },
   },
 ])

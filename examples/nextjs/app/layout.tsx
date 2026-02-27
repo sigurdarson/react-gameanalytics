@@ -21,6 +21,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           enabled={enabled}
           debug
           trackPageViews={{ excludePaths: ['/api/*'] }}
+          resourceCurrencies={['credits']}
+          resourceItemTypes={['export']}
           customDimensions={{
             dimension01: ['free', 'pro', 'enterprise'],
           }}

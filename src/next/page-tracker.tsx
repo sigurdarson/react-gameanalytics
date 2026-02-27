@@ -1,79 +1,44 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { usePathname } from 'next/navigation'
 import { useGameAnalyticsContext } from '../react/provider'
 import { pathnameToEventId, shouldTrackPath } from '../core/page-tracking'
 import type { PageViewConfig } from '../core/types'
-
-// Safely resolve usePathname at module level so hook call order is stable
-let usePathnameHook: (() => string) | null = null
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  usePathnameHook = require('next/navigation').usePathname
-} catch {
-  // next/navigation not available (Pages Router or older Next.js)
-}
 
 interface PageTrackerProps {
   config: PageViewConfig
 }
 
 /**
- * Renderless component that tracks page views in Next.js.
- * Supports App Router (usePathname) and falls back to Pages Router (router.events).
+ * Renderless component that tracks page views in Next.js App Router.
+ * Fires a design event on mount and whenever usePathname() changes.
+ *
+ * SSG safety: wrapped in a Suspense boundary by the Next.js provider,
+ * and usePathname is called unconditionally (required by Rules of Hooks).
+ * During static generation the Suspense boundary catches the bail-out.
  */
 export function PageTracker({ config }: PageTrackerProps) {
   const ga = useGameAnalyticsContext()
   const prevPathRef = useRef<string | null>(null)
-
-  // Always call the hook unconditionally (Rules of Hooks)
-  const appRouterPathname = usePathnameHook ? usePathnameHook() : null
+  const configRef = useRef(config)
+  configRef.current = config
+  const pathname = usePathname()
 
   useEffect(() => {
-    const currentPath = appRouterPathname ?? (typeof window !== 'undefined' ? window.location.pathname : null)
-    if (!currentPath) return
-    if (currentPath === prevPathRef.current) return
+    if (!pathname) return
+    if (pathname === prevPathRef.current) return
 
-    if (config.excludePaths && !shouldTrackPath(currentPath, config.excludePaths)) {
-      prevPathRef.current = currentPath
+    const { excludePaths, prefix } = configRef.current
+    if (excludePaths && !shouldTrackPath(pathname, excludePaths)) {
+      prevPathRef.current = pathname
       return
     }
 
-    prevPathRef.current = currentPath
-    const eventId = pathnameToEventId(currentPath, config.prefix)
+    prevPathRef.current = pathname
+    const eventId = pathnameToEventId(pathname, prefix)
     ga.addDesignEvent({ eventId })
-  }, [appRouterPathname, ga, config.excludePaths, config.prefix])
-
-  // Pages Router support via router.events (no hooks, just the singleton Router)
-  useEffect(() => {
-    if (appRouterPathname !== null) return // Already using App Router
-
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const Router = require('next/router').default
-
-      const handleRouteChange = (url: string) => {
-        const urlPath = url.split('?')[0] ?? url
-        if (urlPath === prevPathRef.current) return
-
-        if (config.excludePaths && !shouldTrackPath(urlPath, config.excludePaths)) {
-          prevPathRef.current = urlPath
-          return
-        }
-
-        prevPathRef.current = urlPath
-        const eventId = pathnameToEventId(urlPath, config.prefix)
-        ga.addDesignEvent({ eventId })
-      }
-
-      Router.events.on('routeChangeComplete', handleRouteChange)
-      return () => {
-        Router.events.off('routeChangeComplete', handleRouteChange)
-      }
-    } catch {
-      // Not in Pages Router context either
-    }
-  }, [appRouterPathname, ga, config.excludePaths, config.prefix])
+  }, [pathname, ga])
 
   return null
 }
