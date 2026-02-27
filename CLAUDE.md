@@ -63,15 +63,27 @@ react-gameanalytics/
 │       ├── plugins.test.ts
 │       └── provider.test.tsx
 ├── examples/
-│   └── nextjs/                  # Test Next.js app (see T19 in SPEC.md)
-│       ├── app/
-│       │   ├── layout.tsx       # Provider setup with auth + consent + page tracking
-│       │   ├── page.tsx         # Landing page with design events
-│       │   ├── dashboard/       # Business + resource events
-│       │   ├── settings/        # Dimension + global field changes
-│       │   ├── onboarding/      # Progression events (multi-step flow)
-│       │   └── components/      # AuthSimulator, ConsentBanner, EventLog, Nav
-│       ├── package.json         # Uses "react-gameanalytics": "file:../../"
+│   ├── nextjs/                  # Next.js App Router example (see T19 in SPEC.md)
+│   │   ├── app/
+│   │   │   ├── layout.tsx       # Provider setup with auth + consent + page tracking
+│   │   │   ├── page.tsx         # Landing page with design events
+│   │   │   ├── dashboard/       # Business + resource events
+│   │   │   ├── settings/        # Dimension + global field changes
+│   │   │   ├── onboarding/      # Progression events (multi-step flow)
+│   │   │   └── components/      # AuthSimulator, ConsentBanner, EventLog, Nav
+│   │   ├── package.json         # Uses "react-gameanalytics": "file:../../"
+│   │   └── README.md
+│   ├── react-vite/              # React + Vite + React Router example
+│   │   ├── src/
+│   │   │   ├── App.tsx          # Provider + Router + PageTracker
+│   │   │   ├── pages/           # Home, Dashboard, Settings, Onboarding
+│   │   │   └── components/      # AuthSimulator, ConsentBanner, EventLog, Nav
+│   │   ├── package.json
+│   │   └── README.md
+│   └── vanilla/                 # Vanilla JS example (no React)
+│       ├── src/main.ts          # Direct SDK usage with DOM event listeners
+│       ├── index.html           # All event types + identity + plugin log
+│       ├── package.json
 │       └── README.md
 ├── package.json
 ├── tsconfig.json
@@ -79,6 +91,7 @@ react-gameanalytics/
 ├── vitest.config.ts
 ├── README.md
 ├── CLAUDE.md                    # This file
+├── PUBLISHING.md                # Versioning and npm publish guide
 ├── SPEC.md                      # Task breakdown and verification criteria
 └── LICENSE
 ```
@@ -168,38 +181,48 @@ When implementing and testing, use these real-world web app examples:
 - **Error events**: API failures, form validation errors, caught exceptions
 - **Ad events**: Banner impressions on content pages, rewarded video to unlock reports
 
-## Example Next.js App
+## Example Apps
 
-The `examples/nextjs/` directory contains a working Next.js application that exercises all major features. Use it for integration testing.
+Three example apps demonstrate each import path. All use `"react-gameanalytics": "file:../../"` for local development.
 
-### Running the example
+### Running any example
 ```bash
 # From the repo root, build the library first
 npm run build
 
-# Then run the example
-cd examples/nextjs
-npm install
-npm run dev
+# Next.js (App Router)
+cd examples/nextjs && npm install && npm run dev
+
+# React + Vite (React Router)
+cd examples/react-vite && npm install && npm run dev
+
+# Vanilla JS (no React)
+cd examples/vanilla && npm install && npm run dev
 ```
 
-### What the example covers
+### Next.js example (`examples/nextjs/`)
+Uses `react-gameanalytics/next`. Tests SSR safety, App Router page tracking, auth/consent.
+
 | Page | Features exercised |
 |---|---|
-| `/` (Home) | Design events, ad events (show, click, rewarded, failed), auth simulator, consent banner |
-| `/dashboard` | Business events (subscription), resource events (credits), error events (warning, error, critical) |
+| `/` (Home) | Design events, ad events, auth simulator, consent banner |
+| `/dashboard` | Business events, resource events, error events |
 | `/dashboard/analytics` | Design event on mount, 3-level page view hierarchy |
 | `/settings` | Custom dimension changes, global custom event fields |
-| `/onboarding` | Progression events across a multi-step flow (start, complete, fail) |
+| `/onboarding` | Progression events (multi-step flow) |
 
-The `EventLog` component shows all fired events in-browser in real time, which is useful for visual verification without needing the GA dashboard.
+### React + Vite example (`examples/react-vite/`)
+Uses `react-gameanalytics/react` with React Router. Same feature coverage as Next.js but with client-side routing and `useTrackPageView` + `useLocation`.
 
-### Using it for testing
-- **SSR safety**: `npm run build` (Next.js production build) will fail if any SSR guard is missing
+### Vanilla JS example (`examples/vanilla/`)
+Uses `react-gameanalytics` core. No React. Demonstrates all 6 event types, identity management, and plugin system with plain DOM event listeners.
+
+### Testing with examples
+- **SSR safety**: `npm run build` in the Next.js example fails if any SSR guard is missing
 - **Page tracking**: Navigate between pages and check the EventLog for `pageView:*` design events
 - **Identity**: Toggle the auth simulator and verify `userId` changes propagate
 - **Consent**: Toggle the consent banner and verify events stop/start
-- **All event types**: Each page has buttons that fire specific event types
+- **All event types**: Each page/section has buttons that fire specific event types
 
 ## Page View Tracking
 
@@ -236,9 +259,14 @@ npx vitest run     # Run all tests
 npx vitest         # Watch mode
 npm pack           # Create publishable tarball
 
-# Example app (integration testing)
-cd examples/nextjs
-npm install         # Resolves local package via file:../../
-npm run dev         # Start dev server
-npm run build       # Production build (tests SSR safety)
+# Versioning (see PUBLISHING.md for full guide)
+npm run version:patch   # Bug fixes
+npm run version:minor   # New features
+npm run version:major   # Breaking changes
+npm run release:patch   # Version + push + publish
+
+# Example apps (integration testing)
+cd examples/nextjs && npm install && npm run dev       # Next.js
+cd examples/react-vite && npm install && npm run dev   # React + Vite
+cd examples/vanilla && npm install && npm run dev      # Vanilla JS
 ```

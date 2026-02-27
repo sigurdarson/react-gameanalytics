@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>react-gameanalytics - Vanilla JS Example</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      button {
+        padding: 8px 16px;
+        margin: 4px;
+        cursor: pointer;
+      }
+      .section {
+        margin-top: 16px;
+      }
+      #event-log {
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 12px;
+        max-height: 300px;
+        overflow: auto;
+        font-size: 13px;
+        font-family: monospace;
+        margin-top: 24px;
+      }
+      .log-entry {
+        border-top: 1px solid #eee;
+        padding: 4px 0;
+      }
+      .log-time { color: #1976d2; }
+      .log-type { font-weight: bold; }
+      .status-bar {
+        padding: 8px 12px;
+        background: #f0f0f0;
+        border-radius: 6px;
+        font-size: 14px;
+        margin-bottom: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 style="font-size: 20px;">react-gameanalytics - Vanilla JS</h1>
+
+    <div class="status-bar" id="status">
+      SDK Status: <strong>Not initialized</strong>
+    </div>
+
+    <div class="section">
+      <h3>Initialize</h3>
+      <button id="btn-init">Initialize SDK</button>
+      <button id="btn-enable">Enable</button>
+      <button id="btn-disable">Disable</button>
+    </div>
+
+    <div class="section">
+      <h3>Design Events</h3>
+      <button id="btn-design-1">CTA Clicked</button>
+      <button id="btn-design-2">Search (23 results)</button>
+    </div>
+
+    <div class="section">
+      <h3>Business Events</h3>
+      <button id="btn-business">Upgrade to Pro ($29/mo)</button>
+    </div>
+
+    <div class="section">
+      <h3>Resource Events</h3>
+      <button id="btn-resource-sink">Spend 10 Credits</button>
+      <button id="btn-resource-source">Earn 50 Credits</button>
+    </div>
+
+    <div class="section">
+      <h3>Progression Events</h3>
+      <button id="btn-prog-start">Start Onboarding</button>
+      <button id="btn-prog-complete">Complete Step</button>
+      <button id="btn-prog-fail">Fail Step</button>
+    </div>
+
+    <div class="section">
+      <h3>Error Events</h3>
+      <button id="btn-error-warn">Warning</button>
+      <button id="btn-error-err">Error</button>
+      <button id="btn-error-crit">Critical</button>
+    </div>
+
+    <div class="section">
+      <h3>Ad Events</h3>
+      <button id="btn-ad-show">Show Banner</button>
+      <button id="btn-ad-reward">Rewarded Video</button>
+      <button id="btn-ad-fail">Ad Failed</button>
+    </div>
+
+    <div class="section">
+      <h3>Identity</h3>
+      <button id="btn-set-user">Set User ID</button>
+      <button id="btn-clear-user">Clear User ID</button>
+      <button id="btn-set-dim">Set Dimension: Pro</button>
+    </div>
+
+    <div id="event-log">
+      <strong>Event Log (<span id="log-count">0</span>)</strong>
+      <div id="log-entries">
+        <p style="color: #999;">No events yet. Initialize the SDK and interact with the buttons.</p>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
