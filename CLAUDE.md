@@ -111,17 +111,22 @@ The official SDK requires configuration methods to be called BEFORE `initialize(
 
 ```
 1. setEnabledInfoLog / setEnabledVerboseLog
-2. setEnabledAutoCrashReporting / setEnabledErrorReporting
-3. setManualSessionHandling
-4. setEventProcessInterval
-5. configureAvailableGamepadsEnabled
-6. configureBuild
-7. configureUserId
-8. configureAvailableCustomDimensions01/02/03
-9. configureAvailableResourceCurrencies
-10. configureAvailableResourceItemTypes
-11. initialize(gameKey, secretKey)  ← LAST
+2. setEnabledManualSessionHandling
+3. setEventProcessInterval (expects seconds; wrapper converts from ms)
+4. configureBuild
+5. configureUserId
+6. configureAvailableCustomDimensions01/02/03
+7. configureAvailableResourceCurrencies
+8. configureAvailableResourceItemTypes
+9. initialize(gameKey, secretKey)  ← LAST
 ```
+
+### SDK method notes
+
+- `setEventProcessInterval` expects seconds, not milliseconds. The wrapper accepts ms and divides by 1000.
+- `addRemoteConfigsListener` expects `{ onRemoteConfigsUpdated: () => void }`, not a bare callback function.
+- Ad events use three separate SDK methods: `addAdEvent`, `addAdEventWithDuration` (when `duration` is set), and `addAdEventWithNoAdReason` (when `noAdReason` is set).
+- `customFields` parameters are passed as plain objects, never JSON-stringified.
 
 ### Enum mappings
 
@@ -145,9 +150,12 @@ The official SDK uses numeric enums. Our wrapper maps string literals:
 
 // Ad type
 'video' → 1, 'rewardedVideo' → 2, 'playable' → 3, 'interstitial' → 4, 'offerWall' → 5, 'banner' → 6
+
+// Ad error (noAdReason)
+'unknown' → 1, 'offline' → 2, 'noFill' → 3, 'internalError' → 4, 'invalidRequest' → 5, 'unableToPrecache' → 6
 ```
 
-**Important**: Verify these numeric values against Context7 docs before implementing. The values above are from training data and may need confirmation.
+**Note**: These numeric values have been verified against the `gameanalytics@4.4.7` TypeScript declarations (`node_modules/gameanalytics/dist/GameAnalytics.d.ts`).
 
 ## Event Types in Web App Context
 
@@ -178,8 +186,8 @@ npm run dev
 ### What the example covers
 | Page | Features exercised |
 |---|---|
-| `/` (Home) | Design events, auth simulator, consent banner |
-| `/dashboard` | Business events (subscription), resource events (credits) |
+| `/` (Home) | Design events, ad events (show, click, rewarded, failed), auth simulator, consent banner |
+| `/dashboard` | Business events (subscription), resource events (credits), error events (warning, error, critical) |
 | `/dashboard/analytics` | Design event on mount, 3-level page view hierarchy |
 | `/settings` | Custom dimension changes, global custom event fields |
 | `/onboarding` | Progression events across a multi-step flow (start, complete, fail) |

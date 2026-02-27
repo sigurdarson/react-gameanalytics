@@ -1,0 +1,12 @@
+src/
+examples/
+*.test.ts
+*.test.tsx
+__tests__/
+tsup.config.ts
+tsconfig.json
+vitest.config.ts
+.gitignore
+CLAUDE.md
+SPEC.md
+.context/

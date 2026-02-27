@@ -2,6 +2,8 @@
 
 A fully-typed React wrapper for the [GameAnalytics](https://gameanalytics.com) JavaScript SDK. Provides a React Context + hooks API, a Next.js adapter, and a vanilla JS client for any framework.
 
+[GameAnalytics](https://gameanalytics.com) is a leading analytics platform trusted by over 100,000 studios worldwide. It provides real-time player analytics, segmentation, A/B testing, and remote configuration to help developers build, grow, and monetize their applications. The platform is ISO 27001 certified and SOC 2 compliant.
+
 > **Note:** This is a community package, not an official GameAnalytics product.
 
 ## Features
@@ -119,6 +121,29 @@ ga.addDesignEvent({ eventId: 'ui:sidebar:toggle' })
 
 ---
 
+## Server Components & SSR
+
+The GameAnalytics SDK is a client-side analytics library that collects data in the browser. Because of this, the `GameAnalyticsProvider` and all hooks (`useGameAnalytics`, `useRemoteConfig`, `useTrackPageView`) must run in **client components**.
+
+In Next.js App Router, add the `'use client'` directive to any component that calls these hooks:
+
+```tsx
+'use client'
+
+import { useGameAnalytics } from 'react-gameanalytics/react'
+
+export function TrackButton() {
+  const ga = useGameAnalytics()
+  // ...
+}
+```
+
+The provider itself is already marked as a client component, so you only need the directive on your own components that use the hooks.
+
+**SSR safety:** All SDK calls no-op when running on the server (`typeof window === 'undefined'`), so the package is safe to use in SSR and SSG environments. No analytics code executes during server rendering or static generation.
+
+---
+
 ## Provider Configuration
 
 The `GameAnalyticsProvider` accepts all configuration options as props:
@@ -139,8 +164,6 @@ The `GameAnalyticsProvider` accepts all configuration options as props:
 
   // Auto-tracking
   trackPageViews={false}          // Track route changes as design events
-  autoCrashReporting={false}      // Auto-report uncaught errors
-  autoErrorReporting={false}      // Auto-report JS errors
 
   // Consent
   enabled={true}                  // Set false to defer until consent given
@@ -162,8 +185,6 @@ The `GameAnalyticsProvider` accepts all configuration options as props:
   resourceCurrencies={['credits', 'tokens', 'api_calls']}
   resourceItemTypes={['feature_unlock', 'export', 'integration']}
 
-  // Other
-  gamepadEnabled={false}
 >
   {children}
 </GameAnalyticsProvider>
@@ -334,6 +355,15 @@ ga.addAdEvent({
   adSdkName: 'admob',
   adPlacement: 'unlock_report',
   duration: 30,
+})
+
+// Ad failed to show
+ga.addAdEvent({
+  adAction: 'failedShow',
+  adType: 'interstitial',
+  adSdkName: 'admob',
+  adPlacement: 'between_pages',
+  noAdReason: 'noFill',  // 'unknown' | 'offline' | 'noFill' | 'internalError' | 'invalidRequest' | 'unableToPrecache'
 })
 ```
 
@@ -901,6 +931,7 @@ import type {
   ErrorSeverity,
   AdAction,
   AdType,
+  AdError,
   GAPlugin,
   GAEvent,
   EventTypeMap,
