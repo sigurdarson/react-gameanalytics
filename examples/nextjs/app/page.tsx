@@ -1,14 +1,15 @@
 'use client'
 
-import { useGameAnalytics } from 'react-gameanalytics/next'
+import { useGameAnalytics, useRemoteConfig } from 'react-gameanalytics/next'
 
 export default function HomePage() {
   const ga = useGameAnalytics()
+  const ctaText = useRemoteConfig('cta_button_text', 'Get Started')
 
   return (
     <div>
       <h2>Home</h2>
-      <p>This is the landing page. Test design events and ad events below.</p>
+      <p>This is the landing page. Test design events, remote configs, and ad events below.</p>
 
       <h3>Design Events</h3>
       <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
@@ -16,7 +17,7 @@ export default function HomePage() {
           onClick={() => ga.addDesignEvent({ eventId: 'ui:cta:hero_clicked' })}
           style={{ padding: '8px 16px' }}
         >
-          Hero CTA Click
+          {ctaText}
         </button>
 
         <button
